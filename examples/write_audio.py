@@ -1,27 +1,41 @@
-#!/usr/bin/env python3
-
-# NOTE: this example requires PyAudio because it uses the Microphone class
-
 import speech_recognition as sr
+import microphone
+class speechRecognition():
+    def __init__(self):
+        pass
+    
+    def recognize_speech_from_mic(recognizer,microphone):
+        if not isinstance(recognizer,sr.Recognizer):
+            raise TypeError("'recognizer' must be 'Recognizer' instance")
+        if not isinstance(microphone,sr.Microphone):
+            raise TypeError("'microphone' must be 'Microphone' instance")
+        with microphone as source:
+            recognizer.adjust_for_ambient_noise(source)
+            audio = recognizer.listen(source)
 
-# obtain audio from the microphone
-r = sr.Recognizer()
-with sr.Microphone() as source:
-    print("Say something!")
-    audio = r.listen(source)
+        response = {
+            "success": True,
+            "error": None,
+            "transcription": None
+            }
+        try:
+            response["transcription"] = recognizer.recognize_google(audio)
+        except sr.RequestError:
+            response["success"]=False
+            response["error"] = "API unavailable/unresponsive"
 
-# write audio to a RAW file
-with open("microphone-results.raw", "wb") as f:
-    f.write(audio.get_raw_data())
+        except sr.UnknownValueError:
+            response["error"] = "Unable to recognize speech"
 
-# write audio to a WAV file
-with open("microphone-results.wav", "wb") as f:
-    f.write(audio.get_wav_data())
+        return response
 
-# write audio to an AIFF file
-with open("microphone-results.aiff", "wb") as f:
-    f.write(audio.get_aiff_data())
+    if __name__ == "__main__":
+        recognizer = sr.Recognizer()
+        mic = sr.Microphone(device_index=1)
+        response = recognize_speech_from_mic(recognizer,mic)
+        print('\nSuccess : {}\nError  : {}\n\nText from Speech\n{}\n\n{}'\
+              .format(response['success'],
+                      response['error'],
+                      '-'*17,
+                      response['transcription']))
 
-# write audio to a FLAC file
-with open("microphone-results.flac", "wb") as f:
-    f.write(audio.get_flac_data())
